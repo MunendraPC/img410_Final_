@@ -712,7 +712,7 @@ traceRay(reflectedColor, reflectedOrigin, reflectedRd, depth + 1, objects, light
     }
 }
 
-void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects, light **lights, int objCount, int lightCount, sceneData camera, int raycastLimit){
+void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects, light **lights, int objCount, int lightCount, sceneData camera, int raycastLimit, int leftRight){
 
     std::printf("Rendering in progress . . .\n\n");
     // render scene
@@ -734,11 +734,22 @@ void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects,
 
             
 
-            // Set pixel color
-            int idx = (j * Wid + i) * 3;
-            pix[idx + 0] = toByte(color[0]);
-            pix[idx + 1] = toByte(color[1]);
-            pix[idx + 2] = toByte(color[2]);
+            if(leftRight == 0){
+                // Set pixel color
+                int idx = (j * Wid + i) * 3;
+                pix[idx + 0] = toByte(1);
+                pix[idx + 1] = toByte(color[1]);
+                pix[idx + 2] = toByte(color[2]);
+            }
+            if(leftRight == 1)
+            {
+                // Set pixel color
+                int idx = (j * Wid + i) * 3;
+                pix[idx + 0] = toByte(color[0]);
+                pix[idx + 1] = toByte(color[1]);
+                pix[idx + 2] = toByte(1);
+
+            }
         }
     }
 
@@ -754,6 +765,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    int leftRight = 0;
     int raycastLimit = 1;
     int Wid = std::atoi(argv[1]);
     int Height = std::atoi(argv[2]);
@@ -781,13 +793,29 @@ int main(int argc, char *argv[])
     // camera origin
     float Ro[3] = {0.0f, 0.0f, 0.0f};
 
-    // render scene
-    render(pix, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit);
+    // render left
+    render(pix, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit, leftRight);
 
     // write ppm image and clean up memory
     if (!writeppm(argv[4], Wid, Height, pix))
     {
         std::cerr << "Error: Could not write output file " << argv[4] << "\n";
+        delete[] pix;
+        delete[] objects;
+        return 1;
+    }
+
+    // pixmap
+    uint8_t *pix2 = new uint8_t[Wid * Height * 3];
+
+    leftRight = 1;
+    // render right
+    render(pix2, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit, leftRight);
+
+    // write ppm image and clean up memory
+    if (!writeppm(argv[5], Wid, Height, pix))
+    {
+        std::cerr << "Error: Could not write output file " << argv[5] << "\n";
         delete[] pix;
         delete[] objects;
         return 1;
