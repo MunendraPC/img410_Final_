@@ -789,7 +789,7 @@ int main(int argc, char *argv[])
     uint8_t *rightPix = new uint8_t[Wid * Height * 3];
     uint8_t *anaglyphPix = new uint8_t[Wid * Height * 3];
 
-    float eyeSep = 0.08f;
+    float eyeSep = 0.12f;
 
     float leftRo[3] = {-eyeSep / 2.0f, 0.0f, 0.0f};
     float rightRo[3] = {eyeSep / 2.0f, 0.0f, 0.0f};
