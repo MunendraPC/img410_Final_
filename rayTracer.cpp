@@ -712,7 +712,7 @@ traceRay(reflectedColor, reflectedOrigin, reflectedRd, depth + 1, objects, light
     }
 }
 
-void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects, light **lights, int objCount, int lightCount, sceneData camera, int raycastLimit, int leftRight){
+void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects, light **lights, int objCount, int lightCount, sceneData camera, int raycastLimit){
 
     std::printf("Rendering in progress . . .\n\n");
     // render scene
@@ -727,6 +727,7 @@ void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects,
             Rd[0] = (-camera.cam_width * 0.5f) + x * camera.cam_width;
             Rd[1] = (camera.cam_height * 0.5f) - y * camera.cam_height;
             Rd[2] = -1.0f;
+
             normalize3(Rd);
 
             float color[3];
@@ -734,38 +735,36 @@ void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects,
 
             
 
-            if(leftRight == 0){
-                // Set pixel color
-                int idx = (j * Wid + i) * 3;
-                pix[idx + 0] = toByte(1);
-                pix[idx + 1] = toByte(color[1]);
-                pix[idx + 2] = toByte(color[2]);
-            }
-            if(leftRight == 1)
-            {
-                // Set pixel color
-                int idx = (j * Wid + i) * 3;
-                pix[idx + 0] = toByte(color[0]);
-                pix[idx + 1] = toByte(color[1]);
-                pix[idx + 2] = toByte(1);
-
-            }
+            int idx = (j * Wid + i) * 3;
+            pix[idx + 0] = toByte(color[0]);
+            pix[idx + 1] = toByte(color[1]);
+            pix[idx + 2] = toByte(color[2]);
         }
     }
 
     std::printf("Scene Rendered\n\n");
 
 }
+void makeAnaglyph(uint8_t *out, uint8_t *left, uint8_t *right, int Wid, int Height)
+{
+    for (int i = 0; i < Wid * Height; i++)
+    {
+        int idx = i * 3;
+
+        out[idx + 0] = left[idx + 0];     // red from left eye
+        out[idx + 1] = right[idx + 1];    // green from right eye
+        out[idx + 2] = right[idx + 2];    // blue from right eye
+    }
+}
 
 int main(int argc, char *argv[])
 {
-    if (argc != 6)
+    if (argc != 5)
     {
-        std::printf("Usage: raycast width height input.scene outputLeft.ppm outputRightppm\n\n");
+        std::printf("Usage: raycast width height input.scene output.ppm\n\n");
         return 1;
     }
 
-    int leftRight = 0;
     int raycastLimit = 1;
     int Wid = std::atoi(argv[1]);
     int Height = std::atoi(argv[2]);
@@ -781,49 +780,42 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // confirm the cam wid and height are not zero
     if (camera.cam_width == 0.0f)
         camera.cam_width = 1.0f;
     if (camera.cam_height == 0.0f)
         camera.cam_height = 1.0f;
 
-    // pixmap for ppm file
-    uint8_t *pix = new uint8_t[Wid * Height * 3];
+    uint8_t *leftPix = new uint8_t[Wid * Height * 3];
+    uint8_t *rightPix = new uint8_t[Wid * Height * 3];
+    uint8_t *anaglyphPix = new uint8_t[Wid * Height * 3];
 
-    // camera origin
-    float Ro[3] = {0.0f, 0.0f, 0.0f};
+    float eyeSep = 0.08f;
 
-    // render left
-    render(pix, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit, leftRight);
+    float leftRo[3] = {-eyeSep / 2.0f, 0.0f, 0.0f};
+    float rightRo[3] = {eyeSep / 2.0f, 0.0f, 0.0f};
 
-    // write ppm image and clean up memory
-    if (!writeppm(argv[4], Wid, Height, pix))
+    render(leftPix, Wid, Height, leftRo, objects, lights, objCount, lightCount, camera, raycastLimit);
+    render(rightPix, Wid, Height, rightRo, objects, lights, objCount, lightCount, camera, raycastLimit);
+
+    makeAnaglyph(anaglyphPix, leftPix, rightPix, Wid, Height);
+
+    if (!writeppm(argv[4], Wid, Height, anaglyphPix))
     {
         std::cerr << "Error: Could not write output file " << argv[4] << "\n";
-        delete[] pix;
+        delete[] leftPix;
+        delete[] rightPix;
+        delete[] anaglyphPix;
         delete[] objects;
+        delete[] lights;
         return 1;
     }
 
-    // pixmap
-    uint8_t *pix2 = new uint8_t[Wid * Height * 3];
+    std::printf("Wrote anaglyph 3D scene to file %s\n\n", argv[4]);
 
-    leftRight = 1;
-    // render right
-    render(pix2, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit, leftRight);
+    delete[] leftPix;
+    delete[] rightPix;
+    delete[] anaglyphPix;
 
-    // write ppm image and clean up memory
-    if (!writeppm(argv[5], Wid, Height, pix2))
-    {
-        std::cerr << "Error: Could not write output file " << argv[5] << "\n";
-        delete[] pix;
-        delete[] objects;
-        return 1;
-    }
-
-    std::printf("Wrote scene to file %s in current folder\n\n", argv[4]);
-
-    delete[] pix;
     for (int s = 0; s < objCount; s++)
     {
         if (objects[s]->type == OBJ_SPHERE)
@@ -833,10 +825,12 @@ int main(int argc, char *argv[])
         }
         delete objects[s];
     }
+
     delete[] objects;
 
     for (int i = 0; i < lightCount; i++)
         delete lights[i];
+
     delete[] lights;
 
     return 0;

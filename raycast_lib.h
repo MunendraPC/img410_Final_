@@ -91,10 +91,14 @@ bool inShadow(const float P[3], const float N[3], const light *L, sceneData **ob
 
 void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects, light **lights, int objCount, int lightCount, sceneData camera, int raycastLimit);
 
+void makeAnaglyph(uint8_t *out, uint8_t *left, uint8_t *right, int Wid, int Height);
+
 void traceRay(float color[3], const float Ro[3], const float Rd[3], int depth, sceneData **objects, light **lights, int objCount, int lightCount, int raycastLimit);
 
 float v3len(const float a[3]);
 
 void v3sub(float out[3], const float a[3], const float b[3]);
+
+
 
 #endif // RAYCAST_LIB_H
