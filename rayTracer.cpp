@@ -813,7 +813,7 @@ int main(int argc, char *argv[])
     render(pix2, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit, leftRight);
 
     // write ppm image and clean up memory
-    if (!writeppm(argv[5], Wid, Height, pix))
+    if (!writeppm(argv[5], Wid, Height, pix2))
     {
         std::cerr << "Error: Could not write output file " << argv[5] << "\n";
         delete[] pix;
