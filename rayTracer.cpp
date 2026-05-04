@@ -99,7 +99,7 @@ bool hitPlane(const float Ro[3], const float Rd[3], sceneData *p, float &tHit)
 }
 
 // skip white space and comments in the PPM file
-//PPM comments start with # and go to the end of the line
+// PPM comments start with # and go to the end of the line
 void skipComments(std::ifstream &image)
 {
     image >> std::ws; 
@@ -464,8 +464,7 @@ float v3len(const float a[3])
     return std::sqrt(dot3(a, a));
 }
 
-bool inShadow(const float P[3], const float N[3], const light *L,
-                     sceneData **objects, int objCount)
+bool inShadow(const float P[3], const float N[3], const light *L, sceneData **objects, int objCount)
 {
     float RoS[3] = {P[0] + N[0] * 1e-4f, P[1] + N[1] * 1e-4f, P[2] + N[2] * 1e-4f};
 
@@ -527,7 +526,7 @@ void traceRay(float color[3], const float Ro[3], const float Rd[3], int depth, s
     }
 
     if (!hit) {
-    // No hit: background is black
+    // no hit: background is black
     return;
     }
 
@@ -745,6 +744,20 @@ void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects,
     std::printf("Scene Rendered\n\n");
 
 }
+<<<<<<< Updated upstream
+=======
+void make3D(uint8_t *out, uint8_t *left, uint8_t *right, int Wid, int Height)
+{
+    for (int i = 0; i < Wid * Height; i++)
+    {
+        int idx = i * 3;
+
+        out[idx + 0] = left[idx + 0];     
+        out[idx + 1] = right[idx + 1];    
+        out[idx + 2] = right[idx + 2];
+    }
+}
+>>>>>>> Stashed changes
 
 int main(int argc, char *argv[])
 {
@@ -784,8 +797,17 @@ int main(int argc, char *argv[])
     // render scene
     render(pix, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit);
 
+<<<<<<< Updated upstream
     // write ppm image and clean up memory
     if (!writeppm(argv[4], Wid, Height, pix))
+=======
+    render(leftPix, Wid, Height, leftRo, objects, lights, objCount, lightCount, camera, raycastLimit);
+    render(rightPix, Wid, Height, rightRo, objects, lights, objCount, lightCount, camera, raycastLimit);
+
+    make3D(anaglyphPix, leftPix, rightPix, Wid, Height);
+
+    if (!writeppm(argv[4], Wid, Height, anaglyphPix))
+>>>>>>> Stashed changes
     {
         std::cerr << "Error: Could not write output file " << argv[4] << "\n";
         delete[] pix;
@@ -793,7 +815,15 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+<<<<<<< Updated upstream
     std::printf("Wrote scene to file %s in current folder\n\n", argv[4]);
+=======
+    std::printf("Wrote scene to file %s\n\n", argv[4]);
+
+    delete[] leftPix;
+    delete[] rightPix;
+    delete[] anaglyphPix;
+>>>>>>> Stashed changes
 
     delete[] pix;
     for (int s = 0; s < objCount; s++)
