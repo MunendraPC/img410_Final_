@@ -744,8 +744,6 @@ void render(uint8_t *pix, int Wid, int Height, float Ro[3], sceneData **objects,
     std::printf("Scene Rendered\n\n");
 
 }
-<<<<<<< Updated upstream
-=======
 void make3D(uint8_t *out, uint8_t *left, uint8_t *right, int Wid, int Height)
 {
     for (int i = 0; i < Wid * Height; i++)
@@ -757,13 +755,12 @@ void make3D(uint8_t *out, uint8_t *left, uint8_t *right, int Wid, int Height)
         out[idx + 2] = right[idx + 2];
     }
 }
->>>>>>> Stashed changes
 
 int main(int argc, char *argv[])
 {
-    if (argc != 6)
+    if (argc != 5)
     {
-        std::printf("Usage: raycast width height input.scene outputLeft.ppm outputRightppm\n\n");
+        std::printf("Usage: raycast width height input.scene output.ppm\n\n");
         return 1;
     }
 
@@ -782,50 +779,42 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // confirm the cam wid and height are not zero
     if (camera.cam_width == 0.0f)
         camera.cam_width = 1.0f;
     if (camera.cam_height == 0.0f)
         camera.cam_height = 1.0f;
 
-    // pixmap for ppm file
-    uint8_t *pix = new uint8_t[Wid * Height * 3];
+    uint8_t *leftPix = new uint8_t[Wid * Height * 3];
+    uint8_t *rightPix = new uint8_t[Wid * Height * 3];
+    uint8_t *anaglyphPix = new uint8_t[Wid * Height * 3];
 
-    // camera origin
-    float Ro[3] = {0.0f, 0.0f, 0.0f};
+    float eyeSep = 0.12f;
 
-    // render scene
-    render(pix, Wid, Height, Ro, objects, lights, objCount, lightCount, camera, raycastLimit);
+    float leftRo[3] = {-eyeSep / 2.0f, 0.0f, 0.0f};
+    float rightRo[3] = {eyeSep / 2.0f, 0.0f, 0.0f};
 
-<<<<<<< Updated upstream
-    // write ppm image and clean up memory
-    if (!writeppm(argv[4], Wid, Height, pix))
-=======
     render(leftPix, Wid, Height, leftRo, objects, lights, objCount, lightCount, camera, raycastLimit);
     render(rightPix, Wid, Height, rightRo, objects, lights, objCount, lightCount, camera, raycastLimit);
 
     make3D(anaglyphPix, leftPix, rightPix, Wid, Height);
 
     if (!writeppm(argv[4], Wid, Height, anaglyphPix))
->>>>>>> Stashed changes
     {
         std::cerr << "Error: Could not write output file " << argv[4] << "\n";
-        delete[] pix;
+        delete[] leftPix;
+        delete[] rightPix;
+        delete[] anaglyphPix;
         delete[] objects;
+        delete[] lights;
         return 1;
     }
 
-<<<<<<< Updated upstream
-    std::printf("Wrote scene to file %s in current folder\n\n", argv[4]);
-=======
-    std::printf("Wrote scene to file %s\n\n", argv[4]);
+    std::printf("Wrote anaglyph 3D scene to file %s\n\n", argv[4]);
 
     delete[] leftPix;
     delete[] rightPix;
     delete[] anaglyphPix;
->>>>>>> Stashed changes
 
-    delete[] pix;
     for (int s = 0; s < objCount; s++)
     {
         if (objects[s]->type == OBJ_SPHERE)
@@ -835,10 +824,12 @@ int main(int argc, char *argv[])
         }
         delete objects[s];
     }
+
     delete[] objects;
 
     for (int i = 0; i < lightCount; i++)
         delete lights[i];
+
     delete[] lights;
 
     return 0;
